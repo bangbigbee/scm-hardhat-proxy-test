@@ -1,0 +1,67 @@
+{
+  "manifestVersion": "3.2",
+  "admin": {
+    "address": "0x3b0477FE22a4fFEF74e2C7887f9e430efb656bE3",
+    "txHash": "0x96ba042254ca46ebbe8cbf6f007172916a9e9cf5f396b5a88643d8fb05594209"
+  },
+  "proxies": [
+    {
+      "address": "0x8A2546b6756Bb425D2FA62E63CFE74cA83Ba8590",
+      "txHash": "0x74d1f371395b120e03ed213f22cc000379d84f8b266eb8cd823e3133ced39260",
+      "kind": "transparent"
+    }
+  ],
+  "impls": {
+    "2b6d755835ac553d5b6ef64066b821862f3f3729a18dc42f52163dff18638589": {
+      "address": "0x3F0Af717b10BdF26Cf64af315d42c3B9A5C0e3d9",
+      "txHash": "0xb80de1bee49f23f8f73b6cd9530f662510cd1fc9e63f43c2629f21600b0c7db8",
+      "layout": {
+        "solcVersion": "0.8.18",
+        "storage": [
+          {
+            "label": "owner",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_address",
+            "contract": "SampleLogic",
+            "src": "contracts/SampleLogic.sol:5"
+          },
+          {
+            "label": "initialized",
+            "offset": 20,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "SampleLogic",
+            "src": "contracts/SampleLogic.sol:6"
+          },
+          {
+            "label": "balances",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "SampleLogic",
+            "src": "contracts/SampleLogic.sol:7"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        }
+      }
+    }
+  }
+}
