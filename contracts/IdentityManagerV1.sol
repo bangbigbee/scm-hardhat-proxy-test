@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0; 
 
-interface iIdentityManagerVTwo {
+interface iIdentityManager {
 
 // Manage proxy
   function initialize(address[] memory _initialOwners) external;
@@ -85,7 +85,7 @@ interface iIdentityManagerVTwo {
 }
 
 
-contract IdentityManagerVTwo is iIdentityManagerVTwo {
+contract IdentityManager is iIdentityManager {
 
   // PROXY
   bool public initialized;    // initialization state of smart contract
@@ -635,8 +635,5 @@ function getObjectInfo(address _objAddr, ObjType _objType) onlyAdmin external vi
   }
   function sayHello(string memory _message) external pure returns(string memory){
         return _message;
-  }
-  function sayGoodbye(string memory _message) external pure returns(string memory){
-        return (string(abi.encodePacked("Goodbye: ", _message)));
   }
 }
