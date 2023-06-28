@@ -11,8 +11,8 @@ async function main() {
     "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
     "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"]], { initializer: 'initialize' })
   console.log(proxy.address," proxy address")
-  console.log(await upgrades.erc1967.getImplementationAddress(proxy.address)," getImplementationAddress")
-  console.log(await upgrades.erc1967.getAdminAddress(proxy.address)," getAdminAddress")    
+  console.log(await upgrades.erc1967.getImplementationAddress(proxy.address)," ImplementationAddress")
+  console.log(await upgrades.erc1967.getAdminAddress(proxy.address)," AdminAddress")    
 }
 
 main().catch((error) => {

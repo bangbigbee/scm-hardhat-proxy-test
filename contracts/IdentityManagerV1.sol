@@ -36,13 +36,14 @@ interface iIdentityManager {
   function isObjectExisting(address _addr, ObjType _objType) external view returns (bool);
 
 // Manage multi-sign transactions
-  function submitMST(uint32 _txCode, address _from, address _to) external returns (bool);
+  function submitMST(uint32 _txCode, ObjType _objType, address _from, address _to) external returns (bool);
   function signSubmittedMST(uint _txId) external returns (bool);
   function revokeSignature(uint _txId) external returns (bool);
-  function executeMST(uint _txId, ObjType _objType) external returns (bool); 
+  function executeMST(uint _txId) external returns (bool); 
   function getMSTCounter() external view returns (uint);
   function getMSTInfo(uint _txId) external view returns (
     uint32    _txCode,
+    ObjType   _objType,
     address   _from,
     address   _to,
     uint256   _creationTime,
@@ -126,7 +127,8 @@ contract IdentityManager is iIdentityManager {
   uint32 private constant MIN_SIG_REQUIRED = 3;      // minimum of signature required per MST
   uint public numSigReqMST;                          // the number of signatures required for MST 
   struct _MST {            
-      uint32  txCode;        
+      uint32  txCode;
+      ObjType objType;        
       address from;
       address to;
       uint256 creationTime;
@@ -135,7 +137,7 @@ contract IdentityManager is iIdentityManager {
       uint    signatureCount;
   }
   mapping(uint => mapping(address => bool)) public isMSTSigned_; 
-  _MST[] private MSTList_; 
+  _MST[] public MSTList_; 
   
   // MODIFIER
   modifier initializer() {
@@ -149,10 +151,10 @@ contract IdentityManager is iIdentityManager {
       _; }
 
   modifier isTxExisting(uint _txId) {
-      require(_txId < MSTList_.length, "The transaction does not exist");
+      require(_txId <= MSTList_.length, "The transaction does not exist");
       _; }
   modifier isTxNotExecutedYet(uint _txId) {
-      require(!MSTList_[_txId].isExecuted, "The transaction have already executed");
+      require(!MSTList_[_txId-1].isExecuted, "The transaction have already executed");
       _; }
   modifier iHaveNotSigned(uint _txId) {
       require(!isMSTSigned_[_txId][msg.sender], "You have already signed");
@@ -162,7 +164,7 @@ contract IdentityManager is iIdentityManager {
       _; }
   modifier isExecutionTimeOut(uint _txId) {
       require(
-        (block.timestamp - MSTList_[_txId].creationTime) <= MST_TIMEOUT,
+        (block.timestamp - MSTList_[_txId-1].creationTime) <= MST_TIMEOUT,
         "Timeout, execution is only valid for less than 30 minutes from the creation time");
       _; }
   modifier whenUnpaused() {
@@ -204,16 +206,15 @@ contract IdentityManager is iIdentityManager {
 
 // ====================== MANAGE OBJECTS WITH MULTI-SIGN TRANSACTIONS ==========================
 function submitMST(
-  uint32 _txCode, 
+  uint32  _txCode,
+  ObjType _objType,
   address _from, 
   address _to) public onlyOwner returns (bool){
       require(_txCode <= 3, "Transaction code does not exists");
-      uint txIndex = MSTList_.length;
-      if(_txCode == 0) _from = address(0);
-      if(_txCode == 2)_to = address(0);
       MSTList_.push(
           _MST({
               txCode:         _txCode,
+              objType:        _objType,
               from:           _from,
               to:             _to,            
               creationTime:   block.timestamp,
@@ -222,7 +223,8 @@ function submitMST(
               signatureCount: 0
           })
       );
-      emit MSTSubmited(msg.sender, txIndex);
+      uint txId = MSTList_.length;
+      emit MSTSubmited(msg.sender, txId);
       return true;
   }
 
@@ -233,7 +235,7 @@ function submitMST(
       iHaveNotSigned(_txId)
       isExecutionTimeOut(_txId)
       returns (bool) {
-        _MST storage mst = MSTList_[_txId];
+        _MST storage mst = MSTList_[_txId-1];
         mst.signatureCount += 1;
         isMSTSigned_[_txId][msg.sender] = true;
         emit MSTSigned(msg.sender, _txId);
@@ -249,36 +251,36 @@ function submitMST(
       isExecutionTimeOut(_txId)
       returns (bool)
   {
-      _MST storage mst = MSTList_[_txId];
+      _MST storage mst = MSTList_[_txId-1];
       mst.signatureCount -= 1;
       isMSTSigned_[_txId][msg.sender] = false;
       emit signatureRevoked(msg.sender, _txId);
       return true;
   }
 
-  function executeMST(uint _txId, ObjType _objType) public
+  function executeMST(uint _txId) public
       onlyOwner
       isTxExisting(_txId)
       isTxNotExecutedYet(_txId)
       isExecutionTimeOut(_txId)
       returns (bool){
-      _MST storage mst = MSTList_[_txId];
+      _MST storage mst = MSTList_[_txId-1];
       require(
       mst.signatureCount >= numSigReqMST,
       "The number of signatures is not enough to execute this transaction"
       );
       mst.isExecuted = true;
       if(mst.txCode == AddTx){
-        _addObject(mst.to, _objType);
+        _addObject(mst.from, mst.objType);
       }
       else if(mst.txCode == TransTx){
-        _transferObject(mst.from, mst.to, _objType);
+        _transferObject(mst.from, mst.to, mst.objType);
       }
       else if(mst.txCode == DeactTx){
-        _deactivateObject(mst.from, _objType);
+        _deactivateObject(mst.from, mst.objType);
       }
       else if(mst.txCode == ActTx){
-        _activateObject(mst.from, _objType);
+        _activateObject(mst.from, mst.objType);
       }
       else{
         return false;
@@ -292,17 +294,19 @@ function submitMST(
   }
 
   function getMSTInfo(uint _txId) public view onlyOwner returns (
-        uint32 txCode,
+        uint32  txCode,
+        ObjType objType,
         address from,
         address to,
         uint256 creationTime,
         uint256 executionTime,
-        bool isExecuted,
+        bool    isExecuted,
         uint256 signatureCount){
-      require(_txId < MSTList_.length, "Transaction does not exists");
-      _MST memory mst = MSTList_[_txId];      
+      require(_txId <= MSTList_.length, "Transaction does not exists");
+      _MST memory mst = MSTList_[_txId-1];      
       return (
         mst.txCode,
+        mst.objType,
         mst.from,
         mst.to,
         mst.creationTime,
@@ -311,13 +315,14 @@ function submitMST(
         mst.signatureCount
       );
   }
+
 // ================================ internal functions =======================================
 function _addObject(address _theObj, ObjType _objType) internal returns (bool){
     // Check if input address is valid
     require(_theObj != address(0), "Invalid object!");
     require(_objType == ObjType.ADMIN ||
             _objType == ObjType.OWNER, 
-            "Object type is invalid!");
+            "Add owner and admin only");
     if(_objType == ObjType.OWNER) {
     //@dev Add owner to the contract
     require(!ownerList_[_theObj].isActive, "The input address is already existing");
@@ -342,7 +347,7 @@ function _transferObject(address _fromObj, address _toObj, ObjType _objType) int
     require(_fromObj != address(0) && _toObj != address(0), "Invalid object addresses!");
     require(_objType == ObjType.ADMIN ||
             _objType == ObjType.OWNER, 
-            "Object type is invalid!");
+            "Transfer owner and admin only");
     if(_objType == ObjType.OWNER){
       require(!ownerList_[_toObj].isActive, "The input address is already existing!");
       // Revoking the signatures of the revoked owner on valid MST
@@ -633,7 +638,5 @@ function getObjectInfo(address _objAddr, ObjType _objType) onlyAdmin external vi
       systemAddr.isKYC);
     }
   }
-  function sayHello(string memory _message) external pure returns(string memory){
-        return _message;
-  }
 }
+

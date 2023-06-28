@@ -15,6 +15,10 @@ describe("IdentityManager With Proxy", function () {
     IdentityManagerVTwo,
       ["Let's apply proxy on Identity Manager!"], 
       { initializer: 'sayGoodbye' });
+      //
+      console.log(identityManagerTwo.address," Proxy")
+      console.log(await upgrades.erc1967.getImplementationAddress(identityManagerTwo.address)," ImplementationAddress")
+      console.log(await upgrades.erc1967.getAdminAddress(identityManagerTwo.address), " AdminAddress")  
 
   })
   it("should initilize system with 3 owners", async function () {
@@ -90,6 +94,7 @@ describe("IdentityManager With Proxy", function () {
     expect(objInfoGet[1]).to.be.true;          // isActive value
     expect(objInfoGet[2]).to.be.true;         // isKYC value
   });
+  //This function was updated at Identity Manager V2
   it("should return the message goodbye", async function () {
     const message = "Finish test SayGoodbye!"; 
     const obj= await identityManagerTwo.sayGoodbye(message);
