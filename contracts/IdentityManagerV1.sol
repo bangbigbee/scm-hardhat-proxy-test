@@ -210,7 +210,9 @@ function submitMST(
   ObjType _objType,
   address _from, 
   address _to) public onlyOwner returns (bool){
-      require(_txCode <= 3, "Transaction code does not exists");
+      require(_txCode <= 4, "Transaction code does not exists");
+      require(_txCode  != AddTx || _objType  != ObjType.USER,"No need to add user with MST");
+      require(_txCode  != AddTx || _objType  != ObjType.SYSADDR,"No need to add system address with MST");    
       MSTList_.push(
           _MST({
               txCode:         _txCode,
@@ -638,5 +640,11 @@ function getObjectInfo(address _objAddr, ObjType _objType) onlyAdmin external vi
       systemAddr.isKYC);
     }
   }
+  // function sayHello(string memory _message) external pure returns(string memory){
+  //       return _message;
+  // }
+  // function sayGoodbye(string memory _message) external pure returns(string memory){
+  //       return (string(abi.encodePacked("Goodbye: ", _message)));
+  // }
 }
 
