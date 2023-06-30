@@ -1,196 +1,193 @@
-
-
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0; 
 
-interface iIdentityManager {
+interface I_IdentityManager {
 
-// Manage proxy
-  function initialize(address[] memory _initialOwners) external;
+
   function pauseSystem() external returns (bool);
   function unpauseSystem() external returns (bool);
+  event systemPaused (address indexed owner);
+  event systemUnpaused (address indexed owner);
+ 
+  event userActivated(address indexed _activator, address indexed _activatedUser);
+  event ownerActivated(address indexed _activator, address indexed _activatedOwner);
+  event adminActivated(address indexed _activator, address indexed _activatedAdmin);
+  event systemActivated(address indexed _activator, address indexed _activatedSystem);
 
-// Manage objects
-  enum ObjType {USER, OWNER, ADMIN, SYSADDR}
-  function registerUser(string calldata _profileId) external returns (bool); 
+  event userDeactivated(address indexed _deactivator, address indexed _deactivatedUser);
+  event ownerDeactivated(address indexed _deactivator, address indexed _deactivatedOwner);
+  event adminDeactivated(address indexed _deactivator, address indexed _deactivatedAdmin);
+  event systemDeactivated(address indexed _deactivator, address indexed _deactivatedSystem);
+
+  event userUpdated(address indexed _updater, address indexed _updatedUser);
+  event ownerUpdated(address indexed _updater, address indexed _updatedOwner);
+  event adminUpdated(address indexed _updater, address indexed _updatedAdmin);
+  event systemUpdated(address indexed _updater, address indexed _updatedSystem);
+
+  event ownerAdded(address indexed _Adder, address indexed _activatedUser);
+  event adminAdded(address indexed _Adder, address indexed _activatedUser);
+  event systemAdded(address indexed _Adder, address indexed _activatedUser);
+  event userWalletAdded(address indexed _userWallet);
+
+  function addUserWallet(
+    string calldata _name,
+    string calldata _idType,
+    string calldata _idValue
+    ) external returns (bool); 
   function addObject(
     address _addr, 
-    ObjType _objType, 
-    string memory objectId) external returns (bool); 
-  function deactivateObject(address _addr, ObjType _objType) external returns (bool); 
-  function activateObject (address _addr, ObjType _objType) external returns (bool); 
+    uint8 _role, 
+    string memory _name,
+    string memory _idType,
+    string memory _idValue
+    ) external returns (bool); 
+  function deactivateObject(address _addr) external returns (bool); 
+  function activateObject (address _addr) external returns (bool); 
   function updateObjectInfo( 
-    address         _objAddr,
-    ObjType         _objType,
-    string memory   _objId, 
-    bool            _isKYC) external returns (bool);
-  function transferObject(address _fromAdmin, address _toAdmin, ObjType objectType) external returns (bool);
-  function getObjectInfo(address _userAddr, ObjType _objType) external returns(
-    string memory   _objId, 
+    address         _addr,
+    string memory   _name,
+    string memory   _idType, 
+    string memory   _idValue,  
+    bool            _isKYC) 
+    external returns (bool);
+  function getObjectInfo(address _userAddr) external returns(
+    string memory   _name, 
+    string memory   _idType, 
+    string memory   _idValue, 
+    uint8           _role,
+    uint            _creationTime,
+    uint            _updateTime,
     bool            _isActive, 
-    bool            _isKYC
-    );
-  function isAccountTradable(address _addr) external view returns (bool);
-  function getObjectCounter(ObjType _objType) external returns (uint userCount);
-  function isObjectExisting(address _addr, ObjType _objType) external view returns (bool);
-
-// Manage multi-sign transactions
-  function submitMST(uint32 _txCode, ObjType _objType, address _from, address _to) external returns (bool);
-  function signSubmittedMST(uint _txId) external returns (bool);
-  function revokeSignature(uint _txId) external returns (bool);
-  function executeMST(uint _txId) external returns (bool); 
+    bool            _isKYC);
+  function isObjectTradable(address _addr) external view returns (bool);
+  function getTotalObjCounter(uint8 _role) external returns (uint);
+  function getActiveObjCounter(uint8 _role) external view returns (uint); 
+  function isObjectExisting(address _addr) external view returns (bool);
+  
+  function submitMST(uint8 _txCode, uint8 _role, address _addr) external returns (bool);
+  function signSubmittedMST(uint32 _txId) external returns (bool);
+  function revokeSignature(uint32 _txId) external returns (bool);
+  function executeMST(uint32 _txId) external returns (bool); 
   function getMSTCounter() external view returns (uint);
-  function getMSTInfo(uint _txId) external view returns (
-    uint32    _txCode,
-    ObjType   _objType,
-    address   _from,
-    address   _to,
+  function getMSTInfo(uint32 _txId) external view returns (
+    uint8     _txCode,
+    uint8     _role,
+    address   _objAddr,
     uint256   _creationTime,
     uint256   _executionTime,
     bool      _isExecuted,
     uint256   _signatureCount);
-// ==================================== EVENT =================================================
-// Proxy 
-  event systemPaused (address indexed owner);
-  event systemUnpaused (address indexed owner);
-// Multi-sign transactions
   event MSTSubmited(address indexed owner,uint indexed txId);
   event MSTSigned(address indexed owner, uint indexed txId);
   event signatureRevoked(address indexed owner, uint indexed txId);
   event MSTExecuted(address indexed owner, uint indexed txId);
-// Owner
-  event ownerAdded(address indexed newOwner);
-  event ownerDeactivated(address indexed deactivatedOwner);
-  event ownerActivated(address indexed activatedOwner);
-  event ownerUpdated(address indexed updatingOwner, address indexed updatedOwner);
-  event ownerTransfered(address indexed fromOwner, address indexed toOwner);
-// User
-  event userRegistered(address indexed newUser);
-  event userDeactivated(address indexed adminAccount, address indexed deactivatedUser);
-  event userActivated(address indexed adminAccount, address indexed activatedUser);
-  event userUpdated(address indexed adminAccount, address indexed updatedUser);
-// Admin
-  event adminAdded(address indexed account, address indexed newAdmin);
-  event adminDeactivated(address indexed ownerAccount, address indexed adminAccount);
-  event adminActivated(address indexed ownerAccount, address indexed adminAccount);
-  event adminUpdated(address indexed ownerAccount, address indexed adminAccount);
-  event adminTransfered(address indexed fromAdmin, address indexed toAdmin);
-// System address
-  event sysAddrAdded(address indexed adminAccount, address indexed newSysAddr);
-  event sysAddrActivated(address indexed adminAccount, address indexed sysAddr);
-  event sysAddrDeactivated(address indexed adminAccount, address indexed sysAddr);
-  event sysAddrUpdated(address indexed adminAccount, address indexed sysAddr);
-  event sysAddrRevoked(address indexed adminAccount, address indexed sysAddr);
-  event sysAddrTransfered(address indexed fromAddr, address indexed toAddr);
 }
+// =====================================================================================================
+contract IdentityManager is I_IdentityManager {
 
-
-contract IdentityManager is iIdentityManager {
-
-  // PROXY
-  bool public initialized;    // initialization state of smart contract
-  bool public paused;         // pause/unpause the system 
-
-  // MULTI-SIGN TRANSACTION CODE
-    uint8 public constant AddTx    = 1;
-    uint8 public constant TransTx  = 2;
-    uint8 public constant DeactTx  = 3;
-    uint8 public constant ActTx    = 4;
-
-  // OBJECT
+    bool public initialized;    
+    bool public paused; 
+  // Object role code
+    uint8 private constant USER        = 1;
+    uint8 private constant OWNER       = 2;
+    uint8 private constant ADMIN       = 3;
+    uint8 private constant SYSTEM      = 4;
+  // Multi-sign transaction code
+    uint8 private constant AddTx       = 5;
+    uint8 private constant DeactiveTx  = 6;
+    uint8 private constant ActiveTx    = 7;
+  // Configure multi-sign transaction 
+    uint32 private constant MST_TIMEOUT = 1800;      
+    uint8 private constant MIN_SIG_REQUIRED = 3;     
+  // Structure of object
   struct _obj{
-    string      objectId;
-    ObjType     objectType;
+    string      name;
+    string      idType;
+    string      idValue;
+    uint8       role;
+    uint        creationTime;
+    uint        updateTime;
     bool        isActive;
     bool        isKYC;
-  }
-  
-  // MANAGE USERS    
-  uint private userCounter;    
-  mapping(address => _obj) public userList_;    
-  
-  // MANAGE ADMIN     
-  uint private adminCounter;
-  mapping(address => _obj) public adminList_;  
-  
-  // MANAGE OWNER 
-  uint private ownerCounter;                     
-  mapping(address => _obj) public ownerList_;  
+    }
 
-  // MANAGE SYSTEM ADDRESSES  
-  uint private sysAddrCounter;                   
-  mapping(address => _obj) public sysAddrList_; 
-  
+  // Manage object
+  mapping(address => _obj) public objList_;
+
+  // Manage object counter
+  mapping (uint8 => uint) private totalObjCounter_; 
+  mapping (uint8 => uint) private actiObjCounter_;  
+
   // Manage multi-sign transactions 
-  uint32 private constant MST_TIMEOUT = 1800;        // MST timeout: 30 minutes = 1800 seconds
-  uint32 private constant MIN_SIG_REQUIRED = 3;      // minimum of signature required per MST
-  uint public numSigReqMST;                          // the number of signatures required for MST 
-  struct _MST {            
-      uint32  txCode;
-      ObjType objType;        
-      address from;
-      address to;
+  uint public numSigReqMST;                         
+  struct _MST {                                      
+      uint8   txCode;
+      uint8   role;                    
+      address objAddr;
       uint256 creationTime;
       uint256 executionTime;
       bool    isExecuted;
       uint    signatureCount;
-  }
+    }
+  // Manage transactions owner has signed 
   mapping(uint => mapping(address => bool)) public isMSTSigned_; 
-  _MST[] public MSTList_; 
-  
-  // MODIFIER
+  _MST[] private MSTList_;                           
+  // Modifers
   modifier initializer() {
-      require(!initialized, "Contract is already initialized");
+      require(!initialized, "Already initialized");
       _;}
   modifier onlyOwner() {
-      require(ownerList_[msg.sender].isActive, "You are not authorized as the owner!");
+      require(objList_[msg.sender].role==OWNER && objList_[msg.sender].isActive, 
+             "Not authorized as owner!");
       _; }
   modifier onlyAdmin() {
-    require(adminList_[msg.sender].isActive || ownerList_[msg.sender].isActive, "You are not authorized as an admin!");
+    require((objList_[msg.sender].role == ADMIN && objList_[msg.sender].isActive) || 
+            (objList_[msg.sender].role == OWNER && objList_[msg.sender].isActive), 
+           "Not authorized as admin!");
       _; }
-
   modifier isTxExisting(uint _txId) {
-      require(_txId <= MSTList_.length, "The transaction does not exist");
+      require(_txId <= MSTList_.length, "Transaction does not exist");
       _; }
   modifier isTxNotExecutedYet(uint _txId) {
-      require(!MSTList_[_txId-1].isExecuted, "The transaction have already executed");
+      require(!MSTList_[_txId-1].isExecuted, "Transaction already executed");
       _; }
   modifier iHaveNotSigned(uint _txId) {
-      require(!isMSTSigned_[_txId][msg.sender], "You have already signed");
+      require(!isMSTSigned_[_txId][msg.sender], "Already signed");
       _; }
   modifier iHaveSigned(uint _txId) {
-      require(isMSTSigned_[_txId][msg.sender], "You have not signed");
+      require(isMSTSigned_[_txId][msg.sender], "Not signed yet");
       _; }
   modifier isExecutionTimeOut(uint _txId) {
       require(
         (block.timestamp - MSTList_[_txId-1].creationTime) <= MST_TIMEOUT,
-        "Timeout, execution is only valid for less than 30 minutes from the creation time");
+        "Execution is only valid less than 30 minutes");
       _; }
   modifier whenUnpaused() {
-    require(!paused, "Asset has been paused");
+    require(!paused, "System has been paused");
     _; }
   modifier whenPaused() {
-    require(paused, "Asset has not been paused");
+    require(paused, "System has not been paused");
     _; }
 
-// =====================================================================================================================
   constructor() {
   }
-// ================================= PROXY ======================================
-  function initialize(address[] memory _initialOwners) public initializer { 
-    require(_initialOwners.length >= MIN_SIG_REQUIRED,"It is required at least 3 owners to initialize system!");
-    ownerCounter = 0;
-    adminCounter = 0;
+// ========================================= MANAGE PROXY ====================================================
+  function initializeSystem(address[] memory _initialOwners) public initializer { 
+    require(_initialOwners.length >= MIN_SIG_REQUIRED,
+           "Required at least 3 owners to initialize system");
+    totalObjCounter_[OWNER] = 0;
     for (uint i = 0; i < _initialOwners.length; i++) {
             address owner = _initialOwners[i];
-            require(owner != address(0), "Invalid owner");
-            require(!ownerList_[owner].isActive, "The owner already exists");
-            ownerList_[owner] = _obj("N/A", ObjType.OWNER, true, true );
-            ownerCounter ++;
-            emit ownerTransfered(address(0), owner);
+            require(owner != address(0), 
+                   "Invalid owner");
+            require(!objList_[owner].isActive, 
+                   "Owner already exists");
+            objList_[owner] = _obj("Name","IdType","IdValue", OWNER, block.timestamp, 0, true, true );
+            totalObjCounter_[OWNER] ++;
+            actiObjCounter_[OWNER] ++;
+            emit ownerAdded(msg.sender, owner);
         }
-    numSigReqMST = ownerCounter/2 + 1;
+    numSigReqMST = totalObjCounter_[OWNER]/2 + 1;
     initialized = true;
   }
   function pauseSystem() external onlyOwner whenUnpaused returns (bool) {
@@ -204,33 +201,37 @@ contract IdentityManager is iIdentityManager {
     return true;
   }
 
-// ====================== MANAGE OBJECTS WITH MULTI-SIGN TRANSACTIONS ==========================
+// Submit a multi-sign transaction
 function submitMST(
-  uint32  _txCode,
-  ObjType _objType,
-  address _from, 
-  address _to) public onlyOwner returns (bool){
-      require(_txCode <= 4, "Transaction code does not exists");
-      require(_txCode  != AddTx || _objType  != ObjType.USER,"No need to add user with MST");
-      require(_txCode  != AddTx || _objType  != ObjType.SYSADDR,"No need to add system address with MST");    
-      MSTList_.push(
+    uint8   _txCode,
+    uint8   _role, 
+    address _objAddr
+    ) public onlyOwner returns (bool){
+    require(_txCode > 4 && _txCode < 8, 
+           "Tx code does not exists");
+    require((_txCode != AddTx || _role != USER), 
+           "signSubmittedMST: No need MST to add user");
+    require((_txCode != AddTx || _role != ADMIN), 
+           "signSubmittedMST: No need MST to add admin");
+    require((_txCode != AddTx || _role != SYSTEM), 
+           "signSubmittedMST: No need MST to add system address");      
+    MSTList_.push(
           _MST({
               txCode:         _txCode,
-              objType:        _objType,
-              from:           _from,
-              to:             _to,            
+              role:           _role,
+              objAddr:        _objAddr,          
               creationTime:   block.timestamp,
               executionTime:  0,
               isExecuted:     false,
               signatureCount: 0
           })
       );
-      uint txId = MSTList_.length;
-      emit MSTSubmited(msg.sender, txId);
-      return true;
+    uint txId = MSTList_.length;
+    emit MSTSubmited(msg.sender, txId);
+    return true;
   }
-
-  function signSubmittedMST(uint _txId) public
+// Sign a submitted transaction
+  function signSubmittedMST(uint32 _txId) public
       onlyOwner
       isTxExisting(_txId)
       isTxNotExecutedYet(_txId)
@@ -243,408 +244,286 @@ function submitMST(
         emit MSTSigned(msg.sender, _txId);
         return true;
       }
-
-  function revokeSignature(uint _txId)
-      public
+// Revoke signature from a multi-sign transaction
+  function revokeSignature(uint32 _txId) public
       onlyOwner
       isTxExisting(_txId)
       isTxNotExecutedYet(_txId)
       iHaveSigned(_txId)
       isExecutionTimeOut(_txId)
-      returns (bool)
-  {
-      _MST storage mst = MSTList_[_txId-1];
-      mst.signatureCount -= 1;
-      isMSTSigned_[_txId][msg.sender] = false;
-      emit signatureRevoked(msg.sender, _txId);
-      return true;
-  }
-
-  function executeMST(uint _txId) public
+      returns (bool) {
+        _MST storage mst = MSTList_[_txId-1];
+        mst.signatureCount -= 1;
+        isMSTSigned_[_txId][msg.sender] = false;
+        emit signatureRevoked(msg.sender, _txId);
+        return true;
+      }
+// Execute a multi-sign transaction
+  function executeMST(uint32 _txId) public
       onlyOwner
       isTxExisting(_txId)
       isTxNotExecutedYet(_txId)
       isExecutionTimeOut(_txId)
       returns (bool){
-      _MST storage mst = MSTList_[_txId-1];
-      require(
-      mst.signatureCount >= numSigReqMST,
-      "The number of signatures is not enough to execute this transaction"
-      );
-      mst.isExecuted = true;
-      if(mst.txCode == AddTx){
-        _addObject(mst.from, mst.objType);
+        _MST storage mst = MSTList_[_txId-1];
+        require(mst.signatureCount >= numSigReqMST,
+                "Not enough signatures to execute transaction");
+        if(mst.txCode == AddTx && mst.role == OWNER)      
+                                     _addOwner(mst.objAddr);
+        else
+        if(mst.txCode == DeactiveTx) _deactivateObj(mst.objAddr);
+        else 
+        if(mst.txCode == ActiveTx)   _activateObj(mst.objAddr);
+        else 
+        return false;                    
+        mst.isExecuted = true;
+        emit MSTExecuted(msg.sender, _txId);
+        return true;
       }
-      else if(mst.txCode == TransTx){
-        _transferObject(mst.from, mst.to, mst.objType);
-      }
-      else if(mst.txCode == DeactTx){
-        _deactivateObject(mst.from, mst.objType);
-      }
-      else if(mst.txCode == ActTx){
-        _activateObject(mst.from, mst.objType);
-      }
-      else{
-        return false;
-      }
-      emit MSTExecuted(msg.sender, _txId);
-      return true;
-  }
 
   function getMSTCounter() public view onlyOwner returns (uint) {
       return MSTList_.length;
   }
 
-  function getMSTInfo(uint _txId) public view onlyOwner returns (
-        uint32  txCode,
-        ObjType objType,
-        address from,
-        address to,
+  function getMSTInfo(uint32 _txId) public view isTxExisting(_txId) onlyOwner returns (
+        uint8   txCode,
+        uint8   role,
+        address objAddr,
         uint256 creationTime,
         uint256 executionTime,
         bool    isExecuted,
         uint256 signatureCount){
-      require(_txId <= MSTList_.length, "Transaction does not exists");
       _MST memory mst = MSTList_[_txId-1];      
       return (
         mst.txCode,
-        mst.objType,
-        mst.from,
-        mst.to,
+        mst.role,
+        mst.objAddr,
         mst.creationTime,
         mst.executionTime,
         mst.isExecuted,
         mst.signatureCount
       );
   }
-
-// ================================ internal functions =======================================
-function _addObject(address _theObj, ObjType _objType) internal returns (bool){
-    // Check if input address is valid
-    require(_theObj != address(0), "Invalid object!");
-    require(_objType == ObjType.ADMIN ||
-            _objType == ObjType.OWNER, 
-            "Add owner and admin only");
-    if(_objType == ObjType.OWNER) {
-    //@dev Add owner to the contract
-    require(!ownerList_[_theObj].isActive, "The input address is already existing");
-    ownerList_[_theObj] = _obj("N/A", ObjType.OWNER, true, false);
-    ownerCounter ++;    
-    numSigReqMST = ownerCounter/2 + 1;
-    emit ownerAdded(_theObj);
+// Internal functions used for executions under multi-sign transactions
+function _addOwner(address _addr) internal returns (bool){
+    require(!isObjectExisting(_addr),
+           "_addOwner: owner already existed");
+    numSigReqMST = totalObjCounter_[OWNER]/2 + 1;    
+    objList_[_addr] = _obj("", "", "N/A", OWNER, block.timestamp, 0, true, false);
+    totalObjCounter_[OWNER] ++;
+    actiObjCounter_[OWNER] ++;    
+    emit ownerAdded(msg.sender, _addr);
     return true;
     }
-    else { 
-    //@dev Add admin to the contract
-    require(!adminList_[_theObj].isActive, "The input address is already existing");
-    adminList_[_theObj] = _obj("N/A", ObjType.ADMIN, true, false);
-    adminCounter ++;    
-    emit adminAdded(msg.sender, _theObj);
-    return true;
-    }
-  }
 
-function _transferObject(address _fromObj, address _toObj, ObjType _objType) internal returns (bool){
-    // Check if the new owner address is valid
-    require(_fromObj != address(0) && _toObj != address(0), "Invalid object addresses!");
-    require(_objType == ObjType.ADMIN ||
-            _objType == ObjType.OWNER, 
-            "Transfer owner and admin only");
-    if(_objType == ObjType.OWNER){
-      require(!ownerList_[_toObj].isActive, "The input address is already existing!");
-      // Revoking the signatures of the revoked owner on valid MST
-      for(uint j = MSTList_.length; j > 0; j--) { // Backward loop for gas saving
-          // Check if MTSx timeout
-          if((block.timestamp - MSTList_[j-1].creationTime) >= MST_TIMEOUT) break;
-          // Check if valid transaction which the revoked owner has signed
-          if((MSTList_[j-1].isExecuted == false) && (isMSTSigned_[j-1][_fromObj] == true)){
-          // Revoke signature of revoked owner
-            MSTList_[j-1].signatureCount = MSTList_[j-1].signatureCount - 1;
-            isMSTSigned_[j-1][_fromObj] = false;
-            emit signatureRevoked(_fromObj, j-1);
-          }
-      }
-      // Update ownership
-      ownerList_[_fromObj].isActive = false;
-      ownerList_[_toObj] = _obj("N/A", ObjType.OWNER, true, false);
-      emit ownerTransfered(_fromObj, _toObj);
-      return true;
-    } 
-    else { // _objType == ObjType.ADMIN)
-      require(!adminList_[_toObj].isActive, "The address is already an existing admin!");
-      // Revoking the signatures of the revoked owner on valid MSTx
-      for(uint j = MSTList_.length; j > 0; j--) { // Backward loop for gas saving
-          if((block.timestamp - MSTList_[j-1].creationTime) >= MST_TIMEOUT) break;
-          if((MSTList_[j-1].isExecuted == false) && (isMSTSigned_[j-1][_fromObj] == true)){
-            MSTList_[j-1].signatureCount = MSTList_[j-1].signatureCount - 1;
-            isMSTSigned_[j-1][_fromObj] = false;
-            emit signatureRevoked(_fromObj, j-1);
-          }
-      }
-      adminList_[_fromObj].isActive = false;
-      adminList_[_toObj] = _obj("N/A", ObjType.ADMIN, true, false);
-      emit adminTransfered(_fromObj, _toObj);
+function _deactivateObj(address _addr) internal returns (bool){
+      require(isObjectExisting(_addr),
+             "_DeactivateObj: object does not exist");
+      require(objList_[_addr].isActive, 
+             "_DeactivateObj: object already deactivated");
+      objList_[_addr].isActive = false;
+      uint8 _role = objList_[_addr].role;
+      actiObjCounter_[_role] --;
+      if      (_role == USER) 
+        emit userDeactivated(msg.sender, _addr);
+      else if (_role == OWNER) 
+        emit ownerDeactivated(msg.sender, _addr);
+      else if (_role == ADMIN) 
+        emit adminDeactivated(msg.sender, _addr);
+      else if (_role == SYSTEM) 
+        emit systemDeactivated(msg.sender, _addr);
+      else 
+        return false;
       return true;
     }
-  }
 
-function _deactivateObject(address _theObj, ObjType _objType) internal returns (bool){
-    require(_objType == ObjType.USER ||
-            _objType == ObjType.OWNER ||
-            _objType == ObjType.ADMIN, 
-            "Object type is invalid!");
-    if(_objType == ObjType.USER) {
-      require(userList_[_theObj].isActive, "User does not exist!");
-      require(userList_[_theObj].isActive, "The object is deactivated already!");
-      userList_[_theObj].isActive = false;
-      userCounter --;
-      emit userDeactivated(msg.sender, _theObj);
+function _activateObj(address _addr) internal returns (bool){
+      require(isObjectExisting(_addr),
+             "_activateObj: object does not exist");
+      require(!objList_[_addr].isActive, 
+             "_activateObj: object activated already");
+      objList_[_addr].isActive = true;
+      uint8 _role = objList_[_addr].role;
+      actiObjCounter_[_role] ++;
+      if      (_role == USER) 
+        emit   userActivated(msg.sender, _addr);
+      else if (_role == OWNER) 
+        emit  adminActivated(msg.sender, _addr);
+      else if (_role == ADMIN) 
+        emit  adminActivated(msg.sender, _addr);
+      else if (_role == SYSTEM) 
+        emit systemActivated(msg.sender, _addr);
+      else 
+        return false;
       return true;
     }
-    else if(_objType == ObjType.OWNER){
-      require(ownerList_[_theObj].isActive, "Owner does not exists!");
-      require(ownerList_[_theObj].isActive, "The owner is deactivated already!");
-      require(ownerCounter > MIN_SIG_REQUIRED, "Require at least 3 owners to manage this contract");
-      ownerList_[_theObj].isActive = false;
-      ownerCounter --;
-      numSigReqMST = ownerCounter/2 + 1;
-      emit ownerDeactivated(_theObj);
-      return true;
-    } else { // _objType == ObjType.ADMIN)
-      require(adminList_[_theObj].isActive, "The admin does not exists!");
-      require(adminList_[_theObj].isActive, "The admin is deactivated already!");
-      adminList_[_theObj].isActive = false;
-      adminCounter --;
-      emit adminDeactivated(msg.sender, _theObj);
-      return true;
-    }
-  }
 
-function _activateObject(address _theObj, ObjType _objType) internal returns (bool){
-    require(_objType == ObjType.USER ||
-            _objType == ObjType.OWNER ||
-            _objType == ObjType.ADMIN, 
-            "Object type is invalid!");
-    if(_objType == ObjType.USER) {
-      require(userList_[_theObj].isActive, "User does not exist!");
-      require(!userList_[_theObj].isActive, "The object is activated already!");
-      userList_[_theObj].isActive = true;
-      userCounter ++;
-      emit userActivated(msg.sender, _theObj);
-      return true;
-    }
-    else if(_objType == ObjType.OWNER){
-      require(ownerList_[_theObj].isActive, "Owner does not exists!");
-      require(!ownerList_[_theObj].isActive, "The owner is activated already!");
-      require(ownerCounter > MIN_SIG_REQUIRED, "Require at least 3 owners to manage this contract");
-      ownerList_[_theObj].isActive = true;
-      ownerCounter ++;
-      numSigReqMST = ownerCounter/2 + 1;
-      emit ownerActivated(_theObj);
-      return true;
-    } else { // _objType == ObjType.ADMIN)
-      require(adminList_[_theObj].isActive, "The admin does not exists!");
-      require(!adminList_[_theObj].isActive, "The admin is activated already!");
-      adminList_[_theObj].isActive = true;
-      adminCounter ++;
-      emit adminDeactivated(msg.sender, _theObj);
-      return true;
-    }
-  }
-
-// ======================= MANAGE OBJECT WITHOUT MULTI-SIGN TRANSACTIONS =================================
-function registerUser(string memory _profileId) public returns (bool) {
-  require(!userList_[msg.sender].isActive,"The user is already registered!");
-  userList_[msg.sender] = _obj(_profileId, ObjType.USER, false, false);
-  userCounter ++;
-  emit userRegistered(msg.sender);
+/*==============================================================================================*/
+function addUserWallet(
+      string memory _name, 
+      string memory _idType,
+      string memory _idValue) public returns (bool) {
+  require(objList_[msg.sender].role == 0,
+         "addUserWallet: accounts already registered or being active");  
+  require(bytes(_name).length != 0, 
+         "addUserWallet: user name must not be empty");
+  require(bytes(_idType).length != 0, 
+         "addUserWallet: user id type must not be empty");
+  require(bytes(_idValue).length != 0, 
+         "addUserWallet: user id value must not be empty");
+  objList_[msg.sender] = _obj(_name, _idType, _idValue, USER, block.timestamp, 0, false, false);
+  totalObjCounter_[USER] ++;   
+  emit userWalletAdded(msg.sender);
   return true;
-  } 
-function getObjectCounter(ObjType _objType) external view onlyAdmin returns (uint _objCounter) {
-       if(_objType == ObjType.USER)    return userCounter;
-       else if(_objType == ObjType.OWNER)   return ownerCounter;
-       else if(_objType == ObjType.ADMIN)   return adminCounter;
-       else return sysAddrCounter;
+  }
+
+function getTotalObjCounter(uint8 _role) external view onlyAdmin returns (uint _objTotalCounter) {
+  require(_role < 5 && _role > 0, "getObjectCounter: invalid object type");   
+  return totalObjCounter_[_role];
 }
-function isObjectExisting(address _addr, ObjType _objType) external view onlyAdmin returns (bool _isObjectExisting) {
-  require(_addr != address(0), "Invalid address!");
-  if     (_objType == ObjType.USER)    return userList_[_addr].isActive;
-  else if(_objType == ObjType.OWNER)   return ownerList_[_addr].isActive;
-  else if(_objType == ObjType.ADMIN)   return adminList_[_addr].isActive;
-  else                                 return sysAddrList_[_addr].isActive;
-  }
-  
-function isAccountTradable(address _addr) external view onlyAdmin returns (bool) {
-  require(_addr != address(0),"Invalid address!");
-  return (sysAddrList_[_addr].isActive || 
-          ownerList_[_addr].isActive   || 
-          adminList_[_addr].isActive   || 
-          userList_[_addr].isActive);
-  }
-
-function addObject(address _newObject, ObjType _objType, string calldata _objId) external onlyOwner returns (bool) {
-  require(_newObject != address(0),"Invalid account!");
-  require (_objType != ObjType.USER && _objType!= ObjType.OWNER,"You are not allowed to add an owner nor user here!");
-  if(_objType == ObjType.ADMIN) {
-    require(!adminList_[_newObject].isActive,"This admin is already existing!");
-    adminList_[_newObject] = _obj(_objId, _objType, true, false);
-    emit adminAdded(msg.sender,_newObject);
-    return true;
-  } else { // _objType == ObjType.SYSADDR)
-    sysAddrList_[_newObject] = _obj(_objId, _objType, true, false);
-    emit sysAddrAdded(msg.sender,_newObject);
-    return true;
-  }
-  }
-
-function transferObject(address _from, address _to, ObjType _objType) external onlyOwner returns (bool){
-  require(_from != address(0) && _to != address(0), "Invalid object addresses!");
-  require(_objType != ObjType.OWNER, "This should be executed under multi-sign transactions!");
-  require(_objType != ObjType.USER, "No need to transfer user ownership!");
-  require(_objType == ObjType.SYSADDR || _objType == ObjType.ADMIN, "Object type is invalid!");
-  if(_objType == ObjType.ADMIN ){
-    require(!adminList_[_to].isActive, "The new admin address is already existing!");
-    adminList_[_from].isActive = false;
-    adminList_[_to] = _obj("N/A", _objType, true, false);
-    emit adminTransfered(_from, _to);
-    return true;
-    } 
-  else { // _objType == ObjType.SYSADDR
-    require(!sysAddrList_[_to].isActive, "The destination address is already existing!");
-    sysAddrList_[_from].isActive = false;
-    sysAddrList_[_to] = _obj("N/A", _objType, true, false);
-    emit sysAddrTransfered(_from, _to);
-    return true;
-    }
-  }
-
-function deactivateObject(address _addr, ObjType _objType) external onlyAdmin returns (bool) {
-  require(_addr != address(0), "Invalid address!");
-  require(_objType != ObjType.OWNER, "This action must be executed under multi-sign transactions!");
-  require(_objType == ObjType.USER  || 
-          _objType == ObjType.ADMIN ||
-          _objType == ObjType.SYSADDR, "Object type is invalid!");
-  if(_objType == ObjType.USER){
-    require(userList_[_addr].isActive, "The user is not existing!");
-    require(userList_[_addr].isActive, "The user is deactivated already!");
-    userList_[_addr].isActive = false;
-    emit userDeactivated(msg.sender, _addr);
-    return true;
-  }
-  else if(_objType == ObjType.ADMIN){
-    require(adminList_[_addr].isActive, "The admin is not existing!");
-    require(adminList_[_addr].isActive, "The admin is deactivated already!");
-    adminList_[_addr].isActive = false;
-    emit adminDeactivated(msg.sender, _addr);
-    return true;
-  } else { // _objType == SYSTEM ADDRESS
-    require(sysAddrList_[_addr].isActive, "The system address is not existing!");
-    require(sysAddrList_[_addr].isActive, "The system address is deactivated already!");
-    sysAddrList_[_addr].isActive = false;
-    emit sysAddrDeactivated(msg.sender, _addr);
-    return true;
-  }      
+function getActiveObjCounter(uint8 _role) external view onlyAdmin returns (uint _objActiveCounter) {
+  require(_role < 5 && _role > 0, "getActiveObjCounter: invalid object type");   
+  return actiObjCounter_[_role];
 }
 
-function activateObject(address _addr, ObjType _objType) external onlyAdmin returns (bool) {
-  require(_addr != address(0), "Invalid address!");
-  require(_objType != ObjType.OWNER, "Activating an owner must be executed under multi-sign transactions!");
-  if(_objType == ObjType.USER){
-    require(userList_[_addr].isActive, "The user is not existing!");
-    require(!userList_[_addr].isActive, "The user is activated already!");
-    userList_[_addr].isActive = true;
-    emit userActivated(msg.sender, _addr);
+function isObjectExisting(address _addr) public view onlyAdmin returns (bool _isObjectExisting) {
+  require(_addr != address(0), "isObjectExisting: invalid address!");
+  return objList_[_addr].role != 0;
+  }
+
+function isObjectTradable(address _addr) external view onlyAdmin returns (bool) {
+  require(isObjectExisting(_addr),
+         "isObjectTradable: object does not exist");
+  return (objList_[_addr].isActive && !paused);
+  }
+
+function addObject(
+      address       _newObj, 
+      uint8         _role, 
+      string memory _name, 
+      string memory _idType, 
+      string memory _idValue) external onlyAdmin returns (bool) {
+  require(!isObjectExisting(_newObj),
+         "addObject: object already exists");
+  require(bytes(_name).length != 0, 
+         "addObject: object name must not be empty");
+  require(_role == ADMIN || _role == SYSTEM, 
+         "addObject: only for admin and system address");
+    objList_[_newObj] = _obj(_name, _idType, _idValue, _role, block.timestamp, 0, true, false);
+    totalObjCounter_[_role] ++;
+    actiObjCounter_[_role] ++;
+    if(_role == ADMIN) 
+      emit adminAdded(msg.sender, _newObj);
+    else 
+    if(_role == SYSTEM)
+      emit systemAdded(msg.sender, _newObj); 
+    else 
+      return false;
     return true;
   }
-  else if(_objType == ObjType.ADMIN){
-    require(adminList_[_addr].isActive, "The admin is not existing!");
-    require(!adminList_[_addr].isActive, "The admin is activated already!");
-    adminList_[_addr].isActive = true;
-    emit adminActivated(msg.sender, _addr);
+
+function deactivateObject(address _addr) external onlyAdmin returns (bool) {
+    require(isObjectExisting(_addr),
+         "deactivateObject: object does not exist");
+    uint8 _role = objList_[_addr].role;
+    require(_role != OWNER, 
+           "deactivateObject: must be executed with MST");
+    require(objList_[_addr].isActive,          
+           "deactivateObject: object already deactivated");
+    objList_[_addr].isActive = false;
+    actiObjCounter_[_role] --;
+    if      (_role == USER) 
+      emit userDeactivated(msg.sender, _addr);
+    else if (_role == ADMIN) 
+      emit adminDeactivated(msg.sender, _addr);
+    else if (_role == SYSTEM) 
+      emit systemDeactivated(msg.sender, _addr);
+    else 
+      return false;
     return true;
-  } else { // _objType == SYSTEM ADDRESS
-    require(sysAddrList_[_addr].isActive, "The system address is not existing!");
-    require(!sysAddrList_[_addr].isActive, "The system address is activated already!");
-    sysAddrList_[_addr].isActive = true;
-    emit sysAddrActivated(msg.sender, _addr);
+  }
+
+function activateObject(address _addr) external onlyAdmin returns (bool) {
+    require(isObjectExisting(_addr),
+         "activateObject: object does not exist");
+    uint8 _role = objList_[_addr].role;
+    require(_role != OWNER,                   
+         "activateObject: must be executed under MST");
+    require(!objList_[_addr].isActive,         
+         "activateObject: object activated already");
+    objList_[_addr].isActive = true;
+    actiObjCounter_[_role] ++;
+    if      (_role == USER) 
+      emit userActivated(msg.sender, _addr);
+    else if (_role == ADMIN) 
+      emit adminActivated(msg.sender, _addr);
+    else if (_role == SYSTEM) 
+      emit systemActivated(msg.sender, _addr);
+    else 
+      return false;
     return true;
-  }      
-}
+  }
 
 function updateObjectInfo( 
-  address       _objAddr,
-  ObjType     _objType,
-  string memory _objId, 
-  bool          _isKYC) 
-  external onlyAdmin returns (bool) {
-  require(_objAddr != address(0), "Invalid address!");
-  if(_objType == ObjType.USER) {
-      require(userList_[_objAddr].isActive,"The user does not exists!");
-      userList_[_objAddr].objectId = _objId;
-      userList_[_objAddr].isKYC = _isKYC;
-      emit userUpdated(msg.sender, _objAddr);
-      return true;
-  } else if(_objType == ObjType.ADMIN) {
-      require(adminList_[_objAddr].isActive,"The admin does not exists!");
-      adminList_[_objAddr].objectId = _objId;
-      adminList_[_objAddr].isKYC = _isKYC;
-      emit adminUpdated(msg.sender, _objAddr);
-      return true;
-  } else if(_objType == ObjType.OWNER) {
-      require(ownerList_[_objAddr].isActive,"The owner does not exists!");
-      ownerList_[_objAddr].objectId = _objId;
-      ownerList_[_objAddr].isKYC = _isKYC;
-      emit ownerUpdated(msg.sender, _objAddr);
-      return true;
-  } else { 
-      require(sysAddrList_[_objAddr].isActive,"The system address does not exists!");
-      sysAddrList_[_objAddr].objectId = _objId;
-      sysAddrList_[_objAddr].isKYC = _isKYC;
-      emit sysAddrUpdated(msg.sender, _objAddr);
-      return true;
-  }
-  }
-
-function getObjectInfo(address _objAddr, ObjType _objType) onlyAdmin external view returns(
-  string memory _objId, 
-  bool          _isActive, 
-  bool          _isKYC) {
-  require(_objAddr != address(0), "Invalid address!");
-  if(_objType == ObjType.USER) {
-    require(userList_[_objAddr].isActive,"The user does not exists!");
-    _obj memory user = userList_[_objAddr];
-    return(
-      user.objectId,
-      user.isActive,
-      user.isKYC);
-  } else if(_objType == ObjType.OWNER) {
-    require(ownerList_[_objAddr].isActive,"The owner does not exists!");
-    _obj memory owner = ownerList_[_objAddr];
-    return(
-      owner.objectId,
-      owner.isActive,
-      owner.isKYC);
-    } else if(_objType == ObjType.ADMIN) {
-    require(adminList_[_objAddr].isActive,"The admin does not exists!");
-    _obj memory admin = adminList_[_objAddr];
-    return(
-      admin.objectId,
-      admin.isActive,
-      admin.isKYC);
-    } else {
-    require(sysAddrList_[_objAddr].isActive,"The system address does not exists!");
-    _obj memory systemAddr = sysAddrList_[_objAddr];
-    return(
-      systemAddr.objectId,
-      systemAddr.isActive,
-      systemAddr.isKYC);
+    address       _addr,
+    string memory _name,
+    string memory _idType, 
+    string memory _idValue,  
+    bool          _isKYC) 
+    external onlyAdmin returns (bool) {
+    require(isObjectExisting(_addr),
+          "updateObjectInfo: object does not exist");
+    uint8 _role = objList_[_addr].role;
+    objList_[_addr].name       = _name;
+    objList_[_addr].idType     = _idType;
+    objList_[_addr].idValue    = _idValue;
+    objList_[_addr].isKYC      = _isKYC;
+    objList_[_addr].updateTime = block.timestamp;
+    if      (_role == USER) 
+      emit   userUpdated(msg.sender, _addr);
+    else if (_role == OWNER) 
+      emit  ownerUpdated(msg.sender, _addr);
+    else if (_role == ADMIN) 
+      emit  adminUpdated(msg.sender, _addr);
+    else if (_role == SYSTEM) 
+      emit systemUpdated(msg.sender, _addr);
+    else 
+      return false;
+    return true;
     }
-  }
-  // function sayHello(string memory _message) external pure returns(string memory){
-  //       return _message;
-  // }
-  // function sayGoodbye(string memory _message) external pure returns(string memory){
-  //       return (string(abi.encodePacked("Goodbye: ", _message)));
-  // }
-}
 
+function getObjectInfo(address _addr) onlyAdmin external view returns(
+  string memory _name,
+  string memory _idType,
+  string memory _idValue,
+  uint8         _role,
+  uint          _creationTime,
+  uint          _updateTime, 
+  bool          _isActive,  
+  bool          _isKYC) {
+  require(isObjectExisting(_addr),
+         "getObjectInfo: object does not exist");
+  _obj memory obj = objList_[_addr];
+  return(
+      obj.name,
+      obj.idType,
+      obj.idValue,
+      obj.role,
+      obj.creationTime,
+      obj.updateTime,
+      obj.isActive,
+      obj.isKYC);
+  }
+  
+function _toString(uint8 _code) internal pure returns(string memory){
+  require(_code < 12 && _code > 0, "toString: invalid code");
+  if (_code == 1)   return "User";
+  if (_code == 2)   return "Owner";
+  if (_code == 3)   return "Admin";
+  if (_code == 4)   return "System";
+  if (_code == 5)   return "AddTx";
+  if (_code == 6)   return "DeactiTx";
+  if (_code == 7)   return "ActiTx";
+  return "";
+}
+}

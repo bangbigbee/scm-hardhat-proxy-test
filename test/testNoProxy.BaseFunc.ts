@@ -8,66 +8,49 @@ describe("IdentityManager", function () {
   let identityManager:Contract;
   enum ObjType {USER, OWNER, ADMIN, SYSADDR}
   let owner: any;
-  // MULTI-SIGN TRANSACTION CODE
-  const AddTx    = 1;
-  const TransTx  = 2;
-  const DeactTx  = 3;
-  const ActTx    = 4;
+  // Object role code
+  const USER        = 1;
+  const OWNER       = 2;
+  const ADMIN       = 3;
+  const SYSTEM      = 4;
 
-  before(async function () {
+  beforeEach(async function () {
+    // console.log("Msg.sender: ", owner.address);
+    // console.log("Contract deployed at: ", identityManager.address);
     [owner] = await ethers.getSigners();
     const IdentityManager = await ethers.getContractFactory("IdentityManager")
     identityManager = await IdentityManager.deploy() // Note: normal deployment
     await identityManager.deployed()
-    console.log(identityManager.address);
-
-  })
-  it("should initilize system with 3 owners", async function () {
+    
     const initialOwners = [
       "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
       "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
-      "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"];
-    const tx = await identityManager.initialize(initialOwners);
-    // Check if the owners were added successfully
-    const owner1 = await identityManager.ownerList_(initialOwners[0]);
-    expect(owner1.isActive).to.be.true;
-    const owner2 = await identityManager.ownerList_(initialOwners[1]);
-    expect(owner2.isActive).to.be.true;
-    const owner3 = await identityManager.ownerList_(initialOwners[2]);
-    expect(owner3.isActive).to.be.true;
-
-    // Check if the event was emitted
-    expect(tx).to.emit(identityManager, "ownerTransfered").withArgs("0x0000000000000000000000000000000000000000", initialOwners[0]);
-
-    // Check the value of numSigReqMST
-    const numSigReqMST = await identityManager.numSigReqMST();
-    expect(numSigReqMST).to.equal(2);
-    // Check the value of initialized
-    const initialized = await identityManager.initialized();
-    expect(initialized).to.be.true;
-  });
-
-  it("should fail if less than 3 owners are provided", async function () {
-    const initialOwners = [
-      "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-      "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
-    ];
-    await expect(identityManager.initialize(initialOwners)).to.be.revertedWith("Contract is already initialized");
-    // shoule be "It is required at least 3 owners to initialize system!"
-    // but the contract is already initialized, so the modifier initializer will revert the message as above!
-  });
-
-  it("should add new ADMIN", async function () {
-    const objAddress = "0xC6078d3f4803B24a51460e57AE76EF6f5447C128";
-    const objType = ObjType.ADMIN;
-    const objId = "Admin1";
-    const tx = await identityManager.addObject(objAddress,objType, objId);
-    // Check if the event was emitted
-    expect(tx).to.emit(identityManager, "adminAdded").withArgs(owner.address, objAddress);
-    // Check if the admin was added successfully
-    const adminObject = await identityManager.adminList_(objAddress);
-    expect(adminObject.isActive).to.be.true;
+      "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "0x90F79bf6EB2c4f870365E785982E1f101E93b906"];
+    await identityManager.initializeSystem(initialOwners);
+    await identityManager.objList_(initialOwners[0]);
+    await identityManager.objList_(initialOwners[1]);
+    await identityManager.objList_(initialOwners[2]);
+    await identityManager.objList_(initialOwners[3]);
   })
+  
+  it("should add new ADMIN", async function () {
+    const adminAddr = "0xC6078d3f4803B24a51460e57AE76EF6f5447C128";
+    const role = ADMIN;
+    const name = "Admin1";
+    const idType = "CCCD";
+    const idValue = "1239456AB32";
+    const tx = await identityManager.addObject(adminAddr, role, name, idType, idValue);
+    // Check if the event was emitted
+    expect(tx).to.emit(identityManager, "adminAdded").withArgs(owner.address, adminAddr);
+    // Check if the admin was added successfully
+    const adminObject = await identityManager.ownerList_(adminAddr);
+    expect(adminObject.isActive).to.be.true;
+    // Check if admin counter works
+    const adminCounter = await identityManager.getActiveObjCounter(role);
+    expect(adminCounter).to.equal(1);
+  })
+  
   it("should get object information for a ADMIN object", async function () {
     const adminObject = "0xC6078d3f4803B24a51460e57AE76EF6f5447C128"; 
     const objType = ObjType.ADMIN; 
