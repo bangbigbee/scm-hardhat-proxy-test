@@ -533,11 +533,12 @@ function sayGoodbye(string memory _message) external pure returns(string memory)
 }
 
 
-// UPDATE SMARt CONTRACT V2 TO V3
-// SCERANIO 2
-// Add a new function to smart contract
-// This function change a object role code & multi-sign transaction code
-/*
+/* UPDATE SMARt CONTRACT V2 TO V3
+* V2
+- Add a new function to smart contract
+
+* V3
+- This function change a object role code & multi-sign transaction code
 The old code is:
     uint8 private constant USER        = 1;
     uint8 private constant OWNER       = 2;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0; 
 
-interface I_IdentityManager_Two {
+interface I_IdentityManager_Four {
 
   event systemPaused (address indexed owner);
   event systemUnpaused (address indexed owner);
@@ -82,7 +82,7 @@ interface I_IdentityManager_Two {
   event MSTExecuted(address indexed owner, uint indexed txId);
 }
 // =====================================================================================================
-contract IdentityManager_Two is I_IdentityManager_Two {
+contract IdentityManager_Four is I_IdentityManager_Four {
 
     bool public initialized;    
     bool public paused; 
@@ -292,7 +292,7 @@ function submitMST(
         uint256 executionTime,
         bool    isExecuted,
         uint256 signatureCount){
-      _MST memory mst = MSTList_[_txId-1];      
+      _MST storage mst = MSTList_[_txId-1];      
       return (
         mst.txCode,
         mst.role,
@@ -502,7 +502,7 @@ function getObjectInfo(address _addr) onlyAdmin external view returns(
   bool          _isKYC) {
   require(isObjectExisting(_addr),
          "getObjectInfo: object does not exist");
-  _obj memory obj = objList_[_addr];
+  _obj storage obj = objList_[_addr];
   return(
       obj.name,
       obj.idType,
@@ -533,8 +533,15 @@ function sayGoodbye(string memory _message) external pure returns(string memory)
 }
 
 
-/* UPDATE SMARt CONTRACT V1 TO V2
-* V2:
+/* UPDATE SMARt CONTRACT V2 TO V4
+* V2
 - Add a new function to smart contract
 - This function does not affect global variable of previous version
+
+* V4:
+- change 'memory' to 'storage'
+- string memory ==> string storage
+ @ _MST storage mst = MSTList_[_txId-1];
+ @ sign and revoke signature
+
 */

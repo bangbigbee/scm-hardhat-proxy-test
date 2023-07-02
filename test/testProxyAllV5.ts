@@ -3,31 +3,27 @@ import { expect } from "chai";
 import { ethers, upgrades } from "hardhat"
 import { Contract, BigNumber } from "ethers"
 
-describe("Apply proxy to IdentityManager Version 3", function () {
+describe("Apply proxy to IdentityManager Version 5", function () {
   let identityManager:Contract;
   // Object role code
-  const USER        = 11;
-  const OWNER       = 12;
-  const ADMIN       = 13;
-  const SYSTEM      = 14;
+  const USER        = 1;
+  const OWNER       = 2;
+  const ADMIN       = 3;
+  const SYSTEM      = 4;
   // Multi-sign transaction code
-  const AddTx       = 15;
-  const DeactivTx   = 16;
-  const ActivTx     = 17;
+  const AddTx       = 5;
+  const DeactivTx   = 6;
+  const ActivTx     = 7;
  
   beforeEach(async function () {
-    const IdentityManager = await ethers.getContractFactory("IdentityManager_Three")
+    const IdentityManager = await ethers.getContractFactory("IdentityManager_Five")
     const proxy = await upgrades.deployProxy(IdentityManager,[] ); 
-    // Important note: full syntax is:
-    // const proxy = await upgrades.deployProxy(IdentityManager,[value want to pass], initializer: 'function want to run first' ); 
-  
-    // Now we attach the identityManager (instance of IdentityManager) to the proxy 
     identityManager = IdentityManager.attach(proxy.address);
-    
+        
     // ====== SAVE PROXY AND IMPLEMENTATIO ADDRESS ==========
-    // console.log(identityManager.address," Proxy")
-    // console.log(await upgrades.erc1967.getImplementationAddress(identityManager.address)," ImplementationAddress")
-    // console.log(await upgrades.erc1967.getAdminAddress(identityManager.address), " AdminAddress")  
+    console.log(identityManager.address," Proxy")
+    console.log(await upgrades.erc1967.getImplementationAddress(identityManager.address)," ImplementationAddress")
+    console.log(await upgrades.erc1967.getAdminAddress(identityManager.address), " AdminAddress")  
     const initialOwners = [
       "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
       "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
@@ -530,7 +526,6 @@ describe("Apply proxy to IdentityManager Version 3", function () {
 
 })
 
-/* TEST RESULT V3
-- Not successfully
-- Most of the cases returns: 'Tx code does not exists'
+/* TEST RESULT V5
+- successful
 */
