@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0; 
 
-interface I_IdentityManager {
+interface I_IdentityManager_Two {
 
   event systemPaused (address indexed owner);
   event systemUnpaused (address indexed owner);
@@ -82,7 +82,7 @@ interface I_IdentityManager {
   event MSTExecuted(address indexed owner, uint indexed txId);
 }
 // =====================================================================================================
-contract IdentityManager is I_IdentityManager {
+contract IdentityManager_Two is I_IdentityManager_Two {
 
     bool public initialized;    
     bool public paused; 
@@ -525,4 +525,16 @@ function _toString(uint8 _code) internal pure returns(string memory){
   if (_code == 7)   return "ActiTx";
   return "";
 }
+
+function sayGoodbye(string memory _message) external pure returns(string memory){
+    return (string(abi.encodePacked("Goodbye ", _message)));
+  }
+
 }
+
+
+// UPDATE SMARt CONTRACT V1 TO V2
+// SCERANIO 1
+// Add a new function to smart contract
+// This function does not affect global variable of previous version
+

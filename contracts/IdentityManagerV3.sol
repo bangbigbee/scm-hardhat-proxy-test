@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0; 
 
-interface I_IdentityManager {
+interface I_IdentityManager_Three {
 
   event systemPaused (address indexed owner);
   event systemUnpaused (address indexed owner);
@@ -82,19 +82,19 @@ interface I_IdentityManager {
   event MSTExecuted(address indexed owner, uint indexed txId);
 }
 // =====================================================================================================
-contract IdentityManager is I_IdentityManager {
+contract IdentityManager_Three is I_IdentityManager_Three {
 
     bool public initialized;    
     bool public paused; 
   // Object role code
-    uint8 private constant USER        = 1;
-    uint8 private constant OWNER       = 2;
-    uint8 private constant ADMIN       = 3;
-    uint8 private constant SYSTEM      = 4;
+    uint8 private constant USER        = 11;
+    uint8 private constant OWNER       = 12;
+    uint8 private constant ADMIN       = 13;
+    uint8 private constant SYSTEM      = 14;
   // Multi-sign transaction code
-    uint8 private constant AddTx       = 5;
-    uint8 private constant DeactivTx   = 6;
-    uint8 private constant ActivTx     = 7;
+    uint8 private constant AddTx       = 15;
+    uint8 private constant DeactivTx   = 16;
+    uint8 private constant ActivTx     = 17;
   // Configure multi-sign transaction 
     uint32 private constant MST_TIMEOUT = 1800;      
     uint8 private constant MIN_SIG_REQUIRED = 3;     
@@ -525,4 +525,33 @@ function _toString(uint8 _code) internal pure returns(string memory){
   if (_code == 7)   return "ActiTx";
   return "";
 }
+
+function sayGoodbye(string memory _message) external pure returns(string memory){
+    return (string(abi.encodePacked("Goodbye ", _message)));
+  }
+
 }
+
+
+// UPDATE SMARt CONTRACT V2 TO V3
+// SCERANIO 2
+// Add a new function to smart contract
+// This function change a object role code & multi-sign transaction code
+/*
+The old code is:
+    uint8 private constant USER        = 1;
+    uint8 private constant OWNER       = 2;
+    uint8 private constant ADMIN       = 3;
+    uint8 private constant SYSTEM      = 4;
+    const AddTx                        = 5;
+    const DeactivTx                    = 6;
+    const ActivTx                      = 7;
+The new code is
+    uint8 private constant USER        = 11;
+    uint8 private constant OWNER       = 12;
+    uint8 private constant ADMIN       = 13;
+    uint8 private constant SYSTEM      = 14;
+    const AddTx                        = 15;
+    const DeactivTx                    = 16;
+    const ActivTx                      = 17;
+*/

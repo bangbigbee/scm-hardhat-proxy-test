@@ -6,14 +6,24 @@ import { Contract, BigNumber } from "ethers"
 describe("Testing IdentityManager @InitializeSytem...", function () {
   let identityManager:Contract;
   let owner: any;
-
+  // Object role code
+  const USER        = 1;
+  const OWNER       = 2;
+  const ADMIN       = 3;
+  const SYSTEM      = 4;
+  // Multi-sign transaction code
+  const AddTx       = 5;
+  const DeactivTx   = 6;
+  const ActivTx     = 7;
   beforeEach(async function () {
-    [owner] = await ethers.getSigners();
     const IdentityManager = await ethers.getContractFactory("IdentityManager")
     identityManager = await IdentityManager.deploy() // Note: normal deployment
     await identityManager.deployed()
-    console.log("Deployed at: ",identityManager.address);
-
+    const initialOwners = [
+      "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "0x90F79bf6EB2c4f870365E785982E1f101E93b906"];
   })
   it("should initilize system with 3 owners", async function () {
     const initialOwners = [
@@ -30,7 +40,8 @@ describe("Testing IdentityManager @InitializeSytem...", function () {
     expect(owner3.isActive).to.be.true;
 
     // Check if the event was emitted
-    expect(tx).to.emit(identityManager, "ownerAdded").withArgs("0x0000000000000000000000000000000000000000", initialOwners[0]);
+    expect(tx).to.emit(identityManager, "ownerAdded").withArgs(
+      "0x0000000000000000000000000000000000000000", initialOwners[0]);
 
     // Check the value of numSigReqMST
     const numSigReqMST = await identityManager.numSigReqMST();
