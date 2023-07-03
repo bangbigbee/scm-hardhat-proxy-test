@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0; 
 
-interface I_IdentityManager_Five {
+interface I_IdentityManager_Ten {
 
   event systemPaused (address indexed owner);
   event systemUnpaused (address indexed owner);
@@ -35,7 +35,7 @@ interface I_IdentityManager_Five {
     ) external returns (bool); 
   function addObject(
     address         _addr, 
-    uint256           _role, 
+    uint8           _role, 
     string memory   _name,
     string memory   _idType,
     string memory   _idValue
@@ -47,30 +47,32 @@ interface I_IdentityManager_Five {
     string memory   _name,
     string memory   _idType, 
     string memory   _idValue,  
-    bool            _isKYC) 
+    bool            _isKYC,
+    uint8           _orderid) 
     external returns (bool);
   function getObjectInfo(address _userAddr) external returns(
     string memory   _name, 
     string memory   _idType, 
     string memory   _idValue, 
-    uint256           _role,
+    uint8           _role,
     uint            _creationTime,
     uint            _updateTime,
     bool            _isActive, 
-    bool            _isKYC);
+    bool            _isKYC,
+    uint8           _orderId);
   function isObjectTradable(address _addr) external view returns (bool);
-  function getTotalObjCounter(uint256 _role) external returns (uint);
-  function getActiveObjCounter(uint256 _role) external view returns (uint); 
+  function getTotalObjCounter(uint8 _role) external returns (uint);
+  function getActiveObjCounter(uint8 _role) external view returns (uint); 
   function isObjectExisting(address _addr) external view returns (bool);
   
-  function submitMST(uint256 _txCode, uint256 _role, address _addr) external returns (bool);
+  function submitMST(uint8 _txCode, uint8 _role, address _addr) external returns (bool);
   function signSubmittedMST(uint32 _txId) external returns (bool);
   function revokeSignature(uint32 _txId) external returns (bool);
   function executeMST(uint32 _txId) external returns (bool); 
   function getMSTCounter() external view returns (uint);
   function getMSTInfo(uint32 _txId) external view returns (
-    uint256     _txCode,
-    uint256     _role,
+    uint8     _txCode,
+    uint8     _role,
     address   _objAddr,
     uint256   _creationTime,
     uint256   _executionTime,
@@ -82,46 +84,47 @@ interface I_IdentityManager_Five {
   event MSTExecuted(address indexed owner, uint indexed txId);
 }
 // =====================================================================================================
-contract IdentityManager_Five is I_IdentityManager_Five {
+contract IdentityManager_Ten is I_IdentityManager_Ten {
 
     bool public initialized;    
-    bool public paused; 
-  // Object role code
-    uint256 private constant USER        = 1;
-    uint256 private constant OWNER       = 2;
-    uint256 private constant ADMIN       = 3;
-    uint256 private constant SYSTEM      = 4;
+    bool public paused;
+    // Object role code
+    uint8 private constant USER        = 1;
+    uint8 private constant OWNER       = 2;
+    uint8 private constant ADMIN       = 3;
+    uint8 private constant SYSTEM      = 4;
   // Multi-sign transaction code
-    uint256 private constant AddTx       = 5;
-    uint256 private constant DeactivTx   = 6;
-    uint256 private constant ActivTx     = 7;
+    uint8 private constant AddTx       = 5;
+    uint8 private constant DeactivTx   = 6;
+    uint8 private constant ActivTx     = 7;
   // Configure multi-sign transaction 
     uint32 private constant MST_TIMEOUT = 1800;      
-    uint256 private constant MIN_SIG_REQUIRED = 3;     
+    uint8 private constant MIN_SIG_REQUIRED = 3;     
   // Structure of object
   struct _obj{
     string      name;
     string      idType;
     string      idValue;
-    uint256       role;
+    uint8       role;
     uint        creationTime;
     uint        updateTime;
     bool        isActive;
     bool        isKYC;
+    uint8       orderId;
     }
 
   // Manage object
   mapping(address => _obj) public objList_;
 
   // Manage object counter
-  mapping (uint256 => uint) private totalObjCounter_; 
-  mapping (uint256 => uint) private actiObjCounter_;  
+  mapping (uint8 => uint) private totalObjCounter_; 
+  mapping (uint8 => uint) private actiObjCounter_;  
 
   // Manage multi-sign transactions 
   uint public numSigReqMST;                         
   struct _MST {                                      
-      uint256   txCode;
-      uint256   role;                    
+      uint8   txCode;
+      uint8   role;                    
       address objAddr;
       uint256 creationTime;
       uint256 executionTime;
@@ -130,7 +133,15 @@ contract IdentityManager_Five is I_IdentityManager_Five {
     }
   // Manage transactions owner has signed 
   mapping(uint => mapping(address => bool)) public isMSTSigned_; 
-  _MST[] private MSTList_;                           
+  _MST[] private MSTList_;  
+  // Update one more variable
+  string goodbyeMessage; 
+  struct _newUpgradeObj{
+    uint8       idObj;
+    string      name;
+    }
+  mapping(address => _newUpgradeObj) public newObjList_;        
+
   // Modifers
   modifier initializer() {
       require(!initialized, "Already initialized");
@@ -181,7 +192,7 @@ contract IdentityManager_Five is I_IdentityManager_Five {
                    "Invalid owner");
             require(!objList_[owner].isActive, 
                    "Owner already exists");
-            objList_[owner] = _obj("Name","IdType","IdValue", OWNER, block.timestamp, 0, true, true );
+            objList_[owner] = _obj("Name","IdType","IdValue", OWNER, block.timestamp, 0, true, true, 1 );
             totalObjCounter_[OWNER] ++;
             actiObjCounter_[OWNER] ++;
             emit ownerAdded(msg.sender, owner);
@@ -202,8 +213,8 @@ contract IdentityManager_Five is I_IdentityManager_Five {
 
 // Submit a multi-sign transaction
 function submitMST(
-    uint256   _txCode,
-    uint256   _role, 
+    uint8   _txCode,
+    uint8   _role, 
     address _objAddr
     ) public onlyOwner returns (bool){
     require(_txCode > 4 && _txCode < 8, 
@@ -285,14 +296,14 @@ function submitMST(
   }
 
   function getMSTInfo(uint32 _txId) public view isTxExisting(_txId) onlyOwner returns (
-        uint256   txCode,
-        uint256   role,
+        uint8   txCode,
+        uint8   role,
         address objAddr,
         uint256 creationTime,
         uint256 executionTime,
         bool    isExecuted,
         uint256 signatureCount){
-      _MST storage mst = MSTList_[_txId-1];      
+      _MST memory mst = MSTList_[_txId-1];      
       return (
         mst.txCode,
         mst.role,
@@ -308,7 +319,7 @@ function _addOwner(address _addr) internal returns (bool){
     require(!isObjectExisting(_addr),
            "_addOwner: owner already existed");
     numSigReqMST = totalObjCounter_[OWNER]/2 + 1;    
-    objList_[_addr] = _obj("", "", "N/A", OWNER, block.timestamp, 0, true, false);
+    objList_[_addr] = _obj("", "", "N/A", OWNER, block.timestamp, 0, true, false, 1);
     totalObjCounter_[OWNER] ++;
     actiObjCounter_[OWNER] ++;    
     emit ownerAdded(msg.sender, _addr);
@@ -321,7 +332,7 @@ function _deactivateObj(address _addr) internal returns (bool){
       require(objList_[_addr].isActive, 
              "_DeactivateObj: object already deactivated");
       objList_[_addr].isActive = false;
-      uint256 _role = objList_[_addr].role;
+      uint8 _role = objList_[_addr].role;
       actiObjCounter_[_role] --;
       if      (_role == USER) 
         emit userDeactivated(msg.sender, _addr);
@@ -342,7 +353,7 @@ function _activateObj(address _addr) internal returns (bool){
       require(!objList_[_addr].isActive, 
              "_activateObj: object activated already");
       objList_[_addr].isActive = true;
-      uint256 _role = objList_[_addr].role;
+      uint8 _role = objList_[_addr].role;
       actiObjCounter_[_role] ++;
       if      (_role == USER) 
         emit   userActivated(msg.sender, _addr);
@@ -370,17 +381,17 @@ function addUserWallet(
          "addUserWallet: user id type must not be empty");
   require(bytes(_idValue).length != 0, 
          "addUserWallet: user id value must not be empty");
-  objList_[msg.sender] = _obj(_name, _idType, _idValue, USER, block.timestamp, 0, false, false);
+  objList_[msg.sender] = _obj(_name, _idType, _idValue, USER, block.timestamp, 0, false, false, 1);
   totalObjCounter_[USER] ++;   
   emit userWalletAdded(msg.sender);
   return true;
   }
 
-function getTotalObjCounter(uint256 _role) external view onlyAdmin returns (uint _objTotalCounter) {
+function getTotalObjCounter(uint8 _role) external view onlyAdmin returns (uint _objTotalCounter) {
   require(_role < 5 && _role > 0, "getObjectCounter: invalid object type");   
   return totalObjCounter_[_role];
 }
-function getActiveObjCounter(uint256 _role) external view onlyAdmin returns (uint _objActiveCounter) {
+function getActiveObjCounter(uint8 _role) external view onlyAdmin returns (uint _objActiveCounter) {
   require(_role < 5 && _role > 0, "getActiveObjCounter: invalid object type");   
   return actiObjCounter_[_role];
 }
@@ -398,7 +409,7 @@ function isObjectTradable(address _addr) external view onlyAdmin returns (bool) 
 
 function addObject(
       address       _newObj, 
-      uint256         _role, 
+      uint8         _role, 
       string memory _name, 
       string memory _idType, 
       string memory _idValue) external onlyAdmin returns (bool) {
@@ -408,7 +419,7 @@ function addObject(
          "addObject: object name must not be empty");
   require(_role == ADMIN || _role == SYSTEM, 
          "addObject: only for admin and system address");
-    objList_[_newObj] = _obj(_name, _idType, _idValue, _role, block.timestamp, 0, true, false);
+    objList_[_newObj] = _obj(_name, _idType, _idValue, _role, block.timestamp, 0, true, false, 1);
     totalObjCounter_[_role] ++;
     actiObjCounter_[_role] ++;
     if(_role == ADMIN) 
@@ -424,7 +435,7 @@ function addObject(
 function deactivateObject(address _addr) external onlyAdmin returns (bool) {
     require(isObjectExisting(_addr),
          "deactivateObject: object does not exist");
-    uint256 _role = objList_[_addr].role;
+    uint8 _role = objList_[_addr].role;
     require(_role != OWNER, 
            "deactivateObject: for owner, must be executed with MST");
     require(objList_[_addr].isActive,          
@@ -445,7 +456,7 @@ function deactivateObject(address _addr) external onlyAdmin returns (bool) {
 function activateObject(address _addr) external onlyAdmin returns (bool) {
     require(isObjectExisting(_addr),
          "activateObject: object does not exist");
-    uint256 _role = objList_[_addr].role;
+    uint8 _role = objList_[_addr].role;
     require(_role != OWNER,                   
          "activateObject: must be executed with MST");
     require(!objList_[_addr].isActive,         
@@ -468,17 +479,19 @@ function updateObjectInfo(
     string memory _name,
     string memory _idType, 
     string memory _idValue,  
-    bool          _isKYC) 
+    bool          _isKYC,
+    uint8         _orderId ) 
     external onlyAdmin returns (bool) {
     require(isObjectExisting(_addr),
           "updateObjectInfo: object does not exist");
-    uint256 _role = objList_[_addr].role;
+    uint8 _role = objList_[_addr].role;
     _obj storage obj = objList_[_addr];
     obj.name       = _name;
     obj.idType     = _idType;
     obj.idValue    = _idValue;
     obj.isKYC      = _isKYC;
     obj.updateTime = block.timestamp;
+    obj.orderId    = _orderId;
     if      (_role == USER) 
       emit   userUpdated(msg.sender, _addr);
     else if (_role == OWNER) 
@@ -496,14 +509,15 @@ function getObjectInfo(address _addr) onlyAdmin external view returns(
   string memory _name,
   string memory _idType,
   string memory _idValue,
-  uint256         _role,
+  uint8         _role,
   uint          _creationTime,
   uint          _updateTime, 
   bool          _isActive,  
-  bool          _isKYC) {
+  bool          _isKYC,
+  uint8         _orderId) {
   require(isObjectExisting(_addr),
          "getObjectInfo: object does not exist");
-  _obj storage obj = objList_[_addr];
+  _obj memory obj = objList_[_addr];
   return(
       obj.name,
       obj.idType,
@@ -512,10 +526,11 @@ function getObjectInfo(address _addr) onlyAdmin external view returns(
       obj.creationTime,
       obj.updateTime,
       obj.isActive,
-      obj.isKYC);
+      obj.isKYC,
+      obj.orderId);
   }
   
-function _toString(uint256 _code) internal pure returns(string memory){
+function _toString(uint8 _code) internal pure returns(string memory){
   require(_code < 12 && _code > 0, "toString: invalid code");
   if (_code == 1)   return "User";
   if (_code == 2)   return "Owner";
@@ -530,11 +545,27 @@ function _toString(uint256 _code) internal pure returns(string memory){
 function sayGoodbye(string memory _message) external pure returns(string memory){
     return (string(abi.encodePacked("Goodbye ", _message)));
   }
+function addNewObject(address _addr, uint8 _idObj, string memory _name) external onlyAdmin returns (bool) {
+    require(!isNewObjectExisting(_addr),"addNew: object already existed");
+    newObjList_[_addr] = _newUpgradeObj(_idObj, _name);
+    return true;
+}
+function updateNewObjectInfo(address _addr, uint8 _idObj, string memory _name) external onlyAdmin returns(bool){
+    require(isNewObjectExisting(_addr),"updateNew: Invalid object");
+    _newUpgradeObj storage obj = newObjList_[_addr];
+    obj.idObj = _idObj;
+    obj.name = _name;
+    return true;
+}
 
+function isNewObjectExisting(address _addr) public view onlyAdmin returns (bool _isObjectExisting) {
+  require(_addr != address(0), "isNewObjectExisting: invalid address!");
+  return newObjList_[_addr].idObj != 0;
+  }
 }
 
 
-/* UPDATE SMARt CONTRACT V4 TO V5
+/* UPDATE SMARt CONTRACT V4 TO V8
 * V2
 - Add a new function to smart contract
 - This function does not affect global variable of previous version
@@ -545,7 +576,36 @@ function sayGoodbye(string memory _message) external pure returns(string memory)
  @ _MST storage mst = MSTList_[_txId-1];
  @ sign and revoke signature
 
-*V5:
-- change variable type
-- from uint8 to uint256
+*V7:
+- add a new state variable: string goodbyeMessage at the bottom of declared varibales;
+
+*V8
+- add one more state variable: 
+    - a struct to manage new type of object
+        struct _newUpgradeObj{
+            int8  idObj,
+            string name;
+        }
+    - at the bottom of declared varibales;
+- add a mapping(address => _newUpgradeObj) newObjList_;  
+- add a function addNewObject
+- add one more function updateNewObjectInfo to manage the struct _newUpgradeObj
+    - case 1: external
+    - case 2: internal
+- add function isNewObjectExisting
+
+*V9
+- change this value: uint8 private constant MIN_SIG_REQUIRED = 5;
+- succeed!!!    
+
+*V10: IMPORTANT
+- WE SKIP UPDATING V10 from V9, we take code from V8 directly to V10
+- WE STILL KEEP PREVIOUS VALUE: MIN_SIG_REQUIRED = 3;  (for easily testing)
+- add an attribute in _obj structure
+- as a result, change argument of getObjectInfo and updateObjecInfo functions 
+- and theirs interface as well
+
+*V11: IMPORTANT
+- delete an attribute in _obj structure
 */
+

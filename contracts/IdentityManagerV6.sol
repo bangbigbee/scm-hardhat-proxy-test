@@ -474,11 +474,12 @@ function updateObjectInfo(
     require(isObjectExisting(_addr),
           "updateObjectInfo: object does not exist");
     uint8 _role = objList_[_addr].role;
-    objList_[_addr].name       = _name;
-    objList_[_addr].idType     = _idType;
-    objList_[_addr].idValue    = _idValue;
-    objList_[_addr].isKYC      = _isKYC;
-    objList_[_addr].updateTime = block.timestamp;
+    _obj storage obj = objList_[_addr];
+    obj.name       = _name;
+    obj.idType     = _idType;
+    obj.idValue    = _idValue;
+    obj.isKYC      = _isKYC;
+    obj.updateTime = block.timestamp;
     if      (_role == USER) 
       emit   userUpdated(msg.sender, _addr);
     else if (_role == OWNER) 
