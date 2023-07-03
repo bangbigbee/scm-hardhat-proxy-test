@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0; 
 
-interface I_IdentityManager {
+interface I_IdentityManager_Six {
 
   event systemPaused (address indexed owner);
   event systemUnpaused (address indexed owner);
@@ -82,10 +82,11 @@ interface I_IdentityManager {
   event MSTExecuted(address indexed owner, uint indexed txId);
 }
 // =====================================================================================================
-contract IdentityManager is I_IdentityManager {
+contract IdentityManager_Six is I_IdentityManager_Six {
 
     bool public initialized;    
-    bool public paused; 
+    bool public paused;
+    string goodbyeMessage; 
   // Object role code
     uint8 private constant USER        = 1;
     uint8 private constant OWNER       = 2;
@@ -525,10 +526,25 @@ function _toString(uint8 _code) internal pure returns(string memory){
   if (_code == 7)   return "ActiTx";
   return "";
 }
+
+function sayGoodbye(string memory _message) external pure returns(string memory){
+    return (string(abi.encodePacked("Goodbye ", _message)));
+  }
+
 }
 
-/*
-- This is the first version of Identity Manger
-- the original version
-- no updates added yet
+
+/* UPDATE SMARt CONTRACT V4 TO V6
+* V2
+- Add a new function to smart contract
+- This function does not affect global variable of previous version
+
+* V4:
+- change 'memory' to 'storage'
+- string memory ==> string storage
+ @ _MST storage mst = MSTList_[_txId-1];
+ @ sign and revoke signature
+
+*V6:
+- add a new state variable: string goodbyeMessage after 2 first state varibles;
 */

@@ -3,8 +3,8 @@ import { ethers } from "hardhat"
 
 async function main() {
 
-  const IdentityManagerVTwo = await ethers.getContractFactory("IdentityManagerVTwo");
-  const identityMnagerTwo = await IdentityManagerVTwo.deploy();
+  const IdentityManager_Two = await ethers.getContractFactory("IdentityManager_Two");
+  const identityMnagerTwo = await IdentityManager_Two.deploy();
   await identityMnagerTwo.deployed();
   console.log("Successully deploy at: ",identityMnagerTwo.address);
 }
